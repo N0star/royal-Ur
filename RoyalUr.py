@@ -92,9 +92,9 @@ class Gra():
       if(my>y+i*49 and my<y+(i+1)*49): return i
     return 99 #def beyond the list
 
-  def koryguj(self):
+  def koryguj(self,v=10):
     for i in range(len(self.tokeny)):
-      self.tokeny[i].correct()
+      self.tokeny[i].correct(v)
 
   def zwiad(self,token,d):
     pos = token.pos + d
@@ -105,7 +105,7 @@ class Gra():
     otok=[elem for i,elem in enumerate(self.tokeny) if elem.pos == pos]
     if len(otok) == 0:
       otok = None
-    elif orok[0].gracz==token.gracz:
+    elif otok[0].gracz==token.gracz:
       otok = -1
     else: otok=otok[0]
     
@@ -114,8 +114,31 @@ class Gra():
   def widok(self,d,idt=None):
     pos = token.pos + d
 
-  def ruch(self,d):
-    pass
+  def ruch(self,token,d):
+    while(token.x!=token.tx or token.ty!=token.y):
+      token.correct()
+      #self.koryguj()
+      self.maluj()
+    if(d==0): return
+    time.sleep(0.1)
+    
+    x=64*3; y=bory+64; centr=borx-siat//6
+    pos = token.pos + 1
+    print(pos)
+    if (pos<4 or pos>11) :
+      if token.gracz==1 : tx=-1
+      elif token.gracz==2 : tx=1
+      tx=centr+siat*tx
+      if(pos<4): ty=y+siat*(2-pos)
+      else: ty=y+siat*(18-pos)
+    else:
+      tx=centr
+      ty=y+siat*(pos-5)
+      
+    token.tx=tx
+    token.ty=ty
+    token.pos=pos
+    self.ruch(token,d-1)
 
   def maluj(self): #graphics
     ekran.fill(czarny)
@@ -157,6 +180,7 @@ while True:
             print(tok," 1")
             tok=g.row1[tok]
             g.zwiad(tok,1)
+            g.ruch(tok,1)
 
         elif(g.col(x)==2):
           tok=g.row(y)
