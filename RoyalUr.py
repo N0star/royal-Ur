@@ -81,7 +81,7 @@ class Gra():
       self.row2[i].ty=y+i*49
 
   def col(self,mx):
-    x=64*3; y=bory+64; centr=borx-siat//6; mx=mx-20;
+    x=64*3; centr=borx-siat//6; mx=mx-20;
     if(mx>centr-x and mx<centr-x+siat-20): return 1
     elif(mx>centr+x and mx<centr+x+siat-20): return 2
     else: return 0
@@ -92,6 +92,32 @@ class Gra():
       if(my>y+i*49 and my<y+(i+1)*49): return i
     return 99 #def beyond the list
 
+  def field(self,mx,my):
+    x=64*3; y=bory+64; centr=borx-siat//6; mx=mx-20;
+    if(mx>borx-siat and mx<centr+siat+siat):
+      if(y>bory):
+        if(mx<borx): x=-1
+        elif(mx>borx+siat): x=1
+        else: x=0
+        
+        for i in range(8):
+          if(my<siat*(i+1)):
+            y=i; break;
+        if(y>64): return None
+
+        if(x==0):
+          pos=y+4
+        else:
+          pos=3-y
+          if(pos<0):
+            pos=19-y
+
+        tok=[elem for i,elem in enumerate(self.tokeny) if elem.pos == pos]
+        if len(tok) > 0:
+          return tok[0]
+        else: pass
+      return None       
+
   def koryguj(self,v=10):
     for i in range(len(self.tokeny)):
       self.tokeny[i].correct(v)
@@ -99,12 +125,12 @@ class Gra():
   def zwiad(self,token,d):
     pos = token.pos + d
     if pos > 14: return -1
-    elif pos==14: return None
+    elif pos==14: return 0
     else: pass
 
     otok=[elem for i,elem in enumerate(self.tokeny) if elem.pos == pos]
     if len(otok) == 0:
-      otok = None
+      otok = 0
     elif otok[0].gracz==token.gracz:
       otok = -1
     else: otok=otok[0]
@@ -121,6 +147,8 @@ class Gra():
       self.maluj()
     if(d==0): return
     time.sleep(0.1)
+
+    #usuń z listy
     
     x=64*3; y=bory+64; centr=borx-siat//6
     pos = token.pos + 1
@@ -179,15 +207,22 @@ while True:
           if(tok<len(g.row1)):
             print(tok," 1")
             tok=g.row1[tok]
-            g.zwiad(tok,1)
-            g.ruch(tok,1)
+            if(g.zwiad(tok,1)is not -1):
+              g.ruch(tok,1)
 
         elif(g.col(x)==2):
           tok=g.row(y)
           if(tok<len(g.row2)):
             print(tok,"2")
             tok=g.row2[tok]
-            g.zwiad(tok,1)
+            if(g.zwiad(tok,1) is not -1):
+              g.ruch(tok,1)
+
+        else:
+          tok=g.field(x,y)
+          if tok is not None:
+            if(g.zwiad(tok,1) is not -1):
+              g.ruch(tok,1)
         
         mbr=1
         
