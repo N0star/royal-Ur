@@ -72,13 +72,17 @@ class Gra():
       self.tokeny.append(t)
       self.row2.append(t)
     self.f = 0
+    self.pos()
 
+  def pos(self):
     x=64*3; y=bory+64; centr=borx-siat//6
     for i in range(n):
-      self.row1[i].tx=centr-x
-      self.row1[i].ty=y+i*49
-      self.row2[i].tx=centr+x
-      self.row2[i].ty=y+i*49
+      if(i<len(self.row1)):
+        self.row1[i].tx=centr-x
+        self.row1[i].ty=y+i*49
+      if(i<len(self.row2)):
+        self.row2[i].tx=centr+x
+        self.row2[i].ty=y+i*49
 
   def col(self,mx):
     x=64*3; centr=borx-siat//6; mx=mx-20;
@@ -114,6 +118,10 @@ class Gra():
 
         tok=[elem for i,elem in enumerate(self.tokeny) if elem.pos == pos]
         if len(tok) > 0:
+          if(len(tok)>1):
+             gracz=(x+3)//2
+             if(x==0): return None #that shouldn't happen btw.!!
+             tok=[elem for i,elem in enumerate(tok) if elem.gracz == gracz]
           return tok[0]
         else: pass
       return None       
@@ -130,7 +138,7 @@ class Gra():
 
     otok=[elem for i,elem in enumerate(self.tokeny) if elem.pos == pos]
     if len(otok) == 0:
-      otok = 0
+      otok = None
     elif otok[0].gracz==token.gracz:
       otok = -1
     else: otok=otok[0]
@@ -147,8 +155,6 @@ class Gra():
       self.maluj()
     if(d==0): return
     time.sleep(0.1)
-
-    #usuń z listy
     
     x=64*3; y=bory+64; centr=borx-siat//6
     pos = token.pos + 1
@@ -167,6 +173,30 @@ class Gra():
     token.ty=ty
     token.pos=pos
     self.ruch(token,d-1)
+
+  def init_ruch(self,token,d,otok=None,war=False):
+    print(otok)
+    if(otok is not None):
+      if(otok.pos==token.pos+d): war=True
+    print(war)
+    if(war==True and otok.gracz==1): self.zbij(otok)
+    self.ruch(token,d)
+    if(war==True and otok.gracz==2): self.zbij(otok)
+
+  def zbij(self,token):
+    token.pos=-1
+    if(token.gracz==1): self.row1.append(token)
+    if(token.gracz==2): self.row2.append(token)
+    self.pos()
+
+  def remove(self,token):
+    if(token.gracz==1):
+      inx=[i for i,elem in enumerate(self.row1) if elem.id == token.id]
+      del self.row1[inx[0]]
+    else:
+      inx=[i for i,elem in enumerate(self.row2) if elem.id == token.id]
+      del self.row2[inx[0]]
+    self.pos()
 
   def maluj(self): #graphics
     ekran.fill(czarny)
@@ -207,22 +237,27 @@ while True:
           if(tok<len(g.row1)):
             print(tok," 1")
             tok=g.row1[tok]
-            if(g.zwiad(tok,1)is not -1):
-              g.ruch(tok,1)
+            target=g.zwiad(tok,1)
+            if(target is not -1):
+              g.remove(tok)
+              g.init_ruch(tok,1)
 
         elif(g.col(x)==2):
           tok=g.row(y)
           if(tok<len(g.row2)):
             print(tok,"2")
             tok=g.row2[tok]
-            if(g.zwiad(tok,1) is not -1):
-              g.ruch(tok,1)
+            target=g.zwiad(tok,1)
+            if(target is not -1):
+              g.remove(tok)
+              g.init_ruch(tok,1)
 
         else:
           tok=g.field(x,y)
           if tok is not None:
-            if(g.zwiad(tok,1) is not -1):
-              g.ruch(tok,1)
+            target=g.zwiad(tok,1)
+            if(target is not -1):
+              g.init_ruch(tok,1,target)
         
         mbr=1
         
