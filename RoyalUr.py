@@ -13,7 +13,7 @@ biały = pygame.color.THECOLORS['white']
 czerwony = pygame.color.THECOLORS['red']
 czarny = pygame.color.THECOLORS['black']
 złoty = pygame.color.THECOLORS['gold']
-myfont = pygame.font.SysFont("monospace", 27)
+myfont = pygame.font.SysFont("monospace", 16)
 
 tło = "tlo.jpg"
 cel =  "cel.png"
@@ -60,6 +60,7 @@ class Token(): # żetony
 class dice():
   def __init__(self):
     self.tetr = []
+    self.d = -1
     for i in range(4):
       tetr = False
       self.tetr.append(tetr)
@@ -69,10 +70,11 @@ class dice():
     for i in range(4):
       self.tetr[i]=random.choice((False,True))
       if(self.tetr[i] is True): d+=1;
+    self.d=d
     return d
 
-  def maluj(self):
-    y=bory+siat*8; delx=3*siat; centr=borx+siat//2
+  def maluj(self,gracz): 
+    y=bory+siat*8; delx=2*siat; centr=borx+siat//2
     for i in range(4):
       if(i<2): j=1
       else: j=-1
@@ -83,6 +85,23 @@ class dice():
         else: kolor=czarny#złoty
         pygame.draw.polygon(ekran,kolor,((x,y),(x-3,y+20),(x+3,y+20)))
 
+    y=bory+siat*5; gracz+=1; w=15 #player pointers
+    if(gracz==1): kolor=czerwony
+    else: kolor = złoty; w=-w;
+    for i in range(-1,3,2):
+      x=centr+siat*i
+      pygame.draw.polygon(ekran,kolor,((x+w,y+20),(x-w,y+30),(x+w,y+40)))
+
+    if(self.d<0):
+      if(gracz==1):
+        label = myfont.render("Throw for Ianna", 5, czerwony); er=-10
+      else:
+        label = myfont.render("Throw for Ereshkigal", 5, złoty); er=7
+      #ekran.blit(label, (centr, bory+siat*8))
+    else:
+      label = myfont.render("Go for... "+str(int(self.d)), 5, biały); er=-24
+    ekran.blit(label, (centr-siat-siat//2-er, bory+siat*8+10))
+      
 class Gra():
   def __init__(self):
 
@@ -99,6 +118,7 @@ class Gra():
     self.f = 0
     self.pos()
     self.d=dice()
+    self.tura=0
 
   def pos(self):
     x=64*3; y=bory+64; centr=borx-siat//6
@@ -225,6 +245,15 @@ class Gra():
       del self.row2[inx[0]]
     self.pos()
 
+  def end(self,token=None):
+    self.d.d=-1
+    if(token is not None):
+      if(token.pos!=3 or token.pos!=7 or token.pos!=13):
+        self.tura=(self.tura+1)%2
+      elif(token==7):
+        pass
+    else: self.tura=(self.tura+1)%2
+
   def losuj(self):
     d=self.d.losuj()
     return d
@@ -239,13 +268,11 @@ class Gra():
 
     for i in range(len(self.tokeny)):
       self.tokeny[i].maluj()
-    self.d.maluj()
+    self.d.maluj(self.tura)
 
     pygame.display.flip()
     
     
-
-
 mbr=0
 d=-1
 g=Gra()
@@ -265,17 +292,19 @@ while True:
       (x,y)=pygame.mouse.get_pos()
       if(m[0]==True or m[1]==True):
         #print(x,y)
-        if(d<0):
+        if(d<0): #time to throw a dice!
           d=g.losuj()
           print(d)
-          if(d==0): d=-1
-          else:
+          if(d==0): d=-1; g.end() #if 0 is roll
+          else: #if there's no move to perform
             b=d; d=-1;
             for i in range(len(g.tokeny)):
               a=g.zwiad(g.tokeny[i],d)
               if(a!=-1): d=b; break;
-        else:
-          if(g.col(x)==1):
+            if(d<0): g.end()
+            
+        else: #time to select a champion!
+          if(g.col(x)==1 and g.tura==0): #from column 1
             tok=g.row(y)
             if(tok<len(g.row1)):
               print(tok," 1")
@@ -285,8 +314,9 @@ while True:
                 g.remove(tok)
                 g.init_ruch(tok,d)
                 d=-1
+                g.end(tok)
 
-          elif(g.col(x)==2):
+          elif(g.col(x)==2 and g.tura==1): #from column 2
             tok=g.row(y)
             if(tok<len(g.row2)):
               print(tok,"2")
@@ -296,14 +326,17 @@ while True:
                 g.remove(tok)
                 g.init_ruch(tok,d)
                 d=-1
+                g.end(tok)
 
-          else:
+          else:                           #from the board
             tok=g.field(x,y)
             if tok is not None:
-              target=g.zwiad(tok,d)
-              if(target is not -1):
-                g.init_ruch(tok,d,target)
-                d=-1
+              if(tok.gracz==g.tura+1):
+                target=g.zwiad(tok,d)
+                if(target is not -1):
+                  g.init_ruch(tok,d,target)
+                  d=-1
+                  g.end(tok)
         
         mbr=1
         
