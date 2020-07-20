@@ -28,6 +28,11 @@ vol = 0.8
 
 n=7
 
+def octogram(screen,color,x,y,a):
+  pygame.draw.polygon(screen,color,((x-a,y-a),(x+a,y-a),(x+a,y+a),(x-a,y+a)))
+  a=a*1.4142
+  pygame.draw.polygon(screen,color,((x,y-a),(x-a,y),(x,y+a),(x+a,y)))
+
 class Token(): # żetony
   def __init__(self,gracz):
     self.id = id(self)
@@ -75,15 +80,16 @@ class dice():
 
   def maluj(self,gracz): 
     y=bory+siat*8; delx=2*siat; centr=borx+siat//2
-    for i in range(4):
-      if(i<2): j=1
-      else: j=-1
-      x=centr+(delx+i%2*siat)*j; kolor=biały;
-      pygame.draw.polygon(ekran,kolor,((x,y),(x-10,y+20),(x+10,y+20)))
-      if(self.tetr[i] is True):
-        if(j>0): kolor=czarny#czerwony
-        else: kolor=czarny#złoty
-        pygame.draw.polygon(ekran,kolor,((x,y),(x-3,y+20),(x+3,y+20)))
+    if(self.d>=0):
+      for i in range(4):
+        if(i<2): j=1
+        else: j=-1
+        x=centr+(delx+i%2*siat)*j; kolor=biały;
+        pygame.draw.polygon(ekran,kolor,((x,y),(x-10,y+20),(x+10,y+20)))
+        if(self.tetr[i] is True):
+          if(j>0): kolor=czarny#czerwony
+          else: kolor=czarny#złoty
+          pygame.draw.polygon(ekran,kolor,((x,y),(x-3,y+20),(x+3,y+20)))
 
     y=bory+siat*5; gracz+=1; w=15 #player pointers
     if(gracz==1): kolor=czerwony
@@ -176,7 +182,13 @@ class Gra():
     for i in range(len(self.tokeny)):
       self.tokeny[i].correct(v)
 
-  def zwiad(self,token,d):
+  def zwiad(self,token,d,inner=None):
+    if(inner is not None):
+      otok=[elem for i,elem in enumerate(self.tokeny) if elem.pos == 7]
+      if(len(otok) == 0):
+        return False
+      else: return True
+        
     pos = token.pos + d
     if pos > 14: return -1
     elif pos==14: return None
@@ -187,7 +199,8 @@ class Gra():
       otok = None
     elif otok[0].gracz==token.gracz:
       otok = -1
-    else: otok=otok[0]
+    elif pos!=7: otok=otok[0]
+    else: otok=self.zwiad(token,d+1)
     
     return otok
 
@@ -223,6 +236,8 @@ class Gra():
   def init_ruch(self,token,d,otok=None,war=False):
     print(otok)
     npos=token.pos+d
+    if(npos==7): #jump over the sactuary?
+      if(self.zwiad(token,d,'yes')): d+=1;
     if(otok is not None):
       if(otok.pos==npos and 3<npos<12): war=True
     print(war)
@@ -248,7 +263,7 @@ class Gra():
   def end(self,token=None):
     self.d.d=-1
     if(token is not None):
-      if(token.pos!=3 or token.pos!=7 or token.pos!=13):
+      if(token.pos!=3 and token.pos!=7 and token.pos!=13):
         self.tura=(self.tura+1)%2
       elif(token==7):
         pass
@@ -260,15 +275,21 @@ class Gra():
 
   def maluj(self): #graphics
     ekran.fill(czarny)
-    for i in range(8):
+    for i in range(8): #gameboard
       if(3<i<6): k=0;l=1;
       else: k=-1;l=2;
       for j in range(k,l):
         pygame.draw.rect(ekran,biały,(borx+j*siat,bory+i*siat,siat-1,siat-1))
 
+    for i in range(0,7,3):
+      if(i==3): k=0;l=2;
+      else: k=-1;l=2;
+      for j in range(k,l,2):
+        octogram(ekran,czarny,borx+j*siat+32,bory+i*siat+32,siat//4)
+
     for i in range(len(self.tokeny)):
-      self.tokeny[i].maluj()
-    self.d.maluj(self.tura)
+      self.tokeny[i].maluj() #tokens
+    self.d.maluj(self.tura) #dices
 
     pygame.display.flip()
     
