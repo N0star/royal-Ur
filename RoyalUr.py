@@ -1,4 +1,4 @@
-#
+# FDC # Royal Game of Ur # 0.1.0
 
 import random, time, os, sys, pygame
 RX = 3
@@ -57,10 +57,11 @@ class Token(): # żetony
         return (((k-l)//d)+((k-l)%10>0))
 
   def maluj(self):
-    bor = 20
+    shft=10; bor = 32#20
     if self.gracz==1: kolor=czerwony
     elif self.gracz==2: kolor=złoty
-    pygame.draw.rect(ekran,kolor,(self.x+bor,self.y,siat-bor,siat-bor))
+    #pygame.draw.rect(ekran,kolor,(self.x+bor,self.y,siat-bor,siat-bor))
+    pygame.draw.circle(ekran, kolor, (self.x+bor+shft,self.y+bor), bor-shft)
 
 class dice():
   def __init__(self):
@@ -100,7 +101,7 @@ class dice():
 
     if(self.d<0):
       if(gracz==1):
-        label = myfont.render("Throw for Ianna", 5, czerwony); er=-10
+        label = myfont.render("Throw for Inanna", 5, czerwony); er=-10
       else:
         label = myfont.render("Throw for Ereshkigal", 5, złoty); er=7
       #ekran.blit(label, (centr, bory+siat*8))
@@ -149,7 +150,7 @@ class Gra():
     return 99 #def beyond the list
 
   def field(self,mx,my):
-    x=64*3; y=bory+64; centr=borx-siat//6; mx=mx-20;
+    x=64*3; y=bory+64; centr=borx-siat//6; my=my-siat//2#mx=mx-20;
     if(mx>borx-siat and mx<centr+siat+siat):
       if(y>bory):
         if(mx<borx): x=-1
@@ -320,8 +321,9 @@ while True:
           else: #if there's no move to perform
             b=d; d=-1;
             for i in range(len(g.tokeny)):
-              a=g.zwiad(g.tokeny[i],d)
-              if(a!=-1): d=b; break;
+              if(g.tokeny[i].gracz==g.tura+1):
+                a=g.zwiad(g.tokeny[i],b)
+                if(a!=-1): d=b; break;
             if(d<0): g.end()
             
         else: #time to select a champion!
