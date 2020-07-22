@@ -44,14 +44,20 @@ class Token(): # żetony
     self.gracz = gracz
 
   def correct(self,v=10): #KORYGOWANIE (XY)
+      delta = 0;
       if(self.ty<self.y):
           self.y=self.y-self.delta(self.y,self.ty,v)
+          delta=1
       elif(self.ty>self.y):
           self.y=self.y+self.delta(self.ty,self.y,v)
+          delta=1
       if(self.tx<self.x):
           self.x=self.x-self.delta(self.x,self.tx,v)
-      if(self.tx>self.x):
+          delta=1
+      elif(self.tx>self.x):
           self.x=self.x+self.delta(self.tx,self.x,v)
+          delta=1
+      return delta
 
   def delta(self,k,l,d):
         return (((k-l)//d)+((k-l)%10>0))
@@ -126,6 +132,8 @@ class Gra():
     self.pos()
     self.d=dice()
     self.tura=0
+    self.win1=0
+    self.win2=0
 
   def pos(self):
     x=64*3; y=bory+64; centr=borx-siat//6
@@ -180,8 +188,10 @@ class Gra():
       return None       
 
   def koryguj(self,v=10):
+    a=0
     for i in range(len(self.tokeny)):
-      self.tokeny[i].correct(v)
+      a+=self.tokeny[i].correct(v)
+    return a
 
   def zwiad(self,token,d,inner=None):
     if(inner is not None):
@@ -274,6 +284,18 @@ class Gra():
     d=self.d.losuj()
     return d
 
+  def win(self,delta):
+    if delta == 0:
+      for i in range(len(self.tokeny)-1,-1,-1):
+        if self.tokeny[i].pos==14:
+          if(self.tokeny[i].gracz==1): self.win1+=1
+          else: self.win2=self.win2+1
+          del(self.tokeny[i])
+
+    if(self.win2==n): print("Ereshkigal"); return 1;
+    elif(self.win1==n): print("Inanna"); return 1;
+    else: return 0;
+
   def maluj(self): #graphics
     ekran.fill(czarny)
     for i in range(8): #gameboard
@@ -306,7 +328,8 @@ while True:
         sys.exit()
   
   g.maluj()
-  g.koryguj()
+  a=g.koryguj()
+  if(g.win(a)): break;
   
   m=pygame.mouse.get_pressed()
   if(m==(0,0,0)): mbr=0;  
