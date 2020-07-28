@@ -9,9 +9,11 @@ ROZMIAR = 800,600
 pygame.display.set_caption("The Royal Game of Ur")
 ekran = pygame.display.set_mode(ROZMIAR)
 zegar = pygame.time.Clock()
+
 biały = pygame.color.THECOLORS['white']
 czerwony = pygame.color.THECOLORS['red']
 czarny = pygame.color.THECOLORS['black']
+niebieski = pygame.color.THECOLORS['blue']
 złoty = pygame.color.THECOLORS['gold']
 myfont = pygame.font.SysFont("monospace", 16)
 
@@ -134,6 +136,7 @@ class Gra():
     self.tura=0
     self.win1=0
     self.win2=0
+    self.efekty = []
 
   def pos(self):
     x=64*3; y=bory+64; centr=borx-siat//6
@@ -191,6 +194,8 @@ class Gra():
     a=0
     for i in range(len(self.tokeny)):
       a+=self.tokeny[i].correct(v)
+    for i in range(len(self.efekty)-1,-1,-1):
+      if(self.efekty[i].timer<=0): del(self.efekty[i])
     return a
 
   def zwiad(self,token,d,inner=None):
@@ -215,8 +220,32 @@ class Gra():
     
     return otok
 
-  def widok(self,d,idt=None):
+  def widok(self,token,d,idt=None):
+    print('widok',d,idt)
     pos = token.pos + d
+    gen = ''
+    x,y=self.pos_pix(pos,token.gracz)
+
+    if(idt is None): gen='move'
+    elif(idt==-1): gen = 'stop'
+    else: gen='war'
+    print(x,y,gen)
+    e = Efekt(gen,x,y)
+    self.efekty.append(e)
+    
+  def pos_pix(self,pos,gracz):
+    x=64*3; y=bory+64; centr=borx-siat//6
+    print(pos)
+    if (pos<4 or pos>11) :
+      if gracz==1 : tx=-1
+      elif gracz==2 : tx=1
+      tx=centr+siat*tx
+      if(pos<4): ty=y+siat*(2-pos)
+      else: ty=y+siat*(18-pos)
+    else:
+      tx=centr
+      ty=y+siat*(pos-5)
+    return tx,ty
 
   def ruch(self,token,d):
     while(token.x!=token.tx or token.ty!=token.y):
@@ -314,8 +343,26 @@ class Gra():
       self.tokeny[i].maluj() #tokens
     self.d.maluj(self.tura) #dices
 
+    for i in range(len(self.efekty)):
+      self.efekty[i].maluj() #effects
     pygame.display.flip()
-    
+
+class Efekt():
+  def __init__(self,gen,x=ROZMIAR[0]//2,y=ROZMIAR[1]//2):
+    self.id=id(self)
+    self.x = x
+    self.y = y
+    self.gen=gen
+
+    if(gen=='stop'): self.timer=300
+
+    else: self.timer=1
+
+  def maluj(self):
+    self.timer-=1
+    if(self.gen=='stop'):
+      pygame.draw.rect(ekran,niebieski,(self.x,self.y,20,20))
+      
     
 mbr=0
 d=-1
@@ -335,7 +382,7 @@ while True:
   if(m==(0,0,0)): mbr=0;  
   if(mbr==0):
       (x,y)=pygame.mouse.get_pos()
-      if(m[0]==True or m[1]==True):
+      if(m[0]==True or m[2]==True):
         #print(x,y)
         if(d<0): #time to throw a dice!
           d=g.losuj()
@@ -356,7 +403,9 @@ while True:
               print(tok," 1")
               tok=g.row1[tok]
               target=g.zwiad(tok,d)
-              if(target is not -1):
+              if(m[2]):
+                  g.widok(tok,d,target)
+              elif(target is not -1):
                 g.remove(tok)
                 g.init_ruch(tok,d)
                 d=-1
@@ -368,7 +417,9 @@ while True:
               print(tok,"2")
               tok=g.row2[tok]
               target=g.zwiad(tok,d)
-              if(target is not -1):
+              if(m[2]):
+                  g.widok(tok,d,target)
+              elif(target is not -1):
                 g.remove(tok)
                 g.init_ruch(tok,d)
                 d=-1
@@ -379,7 +430,9 @@ while True:
             if tok is not None:
               if(tok.gracz==g.tura+1):
                 target=g.zwiad(tok,d)
-                if(target is not -1):
+                if(m[2]):
+                  g.widok(tok,d,target)
+                elif(target is not -1):
                   g.init_ruch(tok,d,target)
                   d=-1
                   g.end(tok)
