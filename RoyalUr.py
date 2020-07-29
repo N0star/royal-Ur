@@ -14,15 +14,15 @@ biały = pygame.color.THECOLORS['white']
 czerwony = pygame.color.THECOLORS['red']
 czarny = pygame.color.THECOLORS['black']
 niebieski = pygame.color.THECOLORS['blue']
+zielony = pygame.color.THECOLORS['green']
 złoty = pygame.color.THECOLORS['gold']
+
+eresh = pygame.color.Color(0xd9,0xc2,0x52)
+ishta = pygame.color.Color(0xad,0x15,0x2e)
 myfont = pygame.font.SysFont("monospace", 16)
 
 tło = "tlo.jpg"
-cel =  "cel.png"
-wla = "zapal.png"
-wyl = "zgas.png" #wyl = "zgasz.png"
 brak = "brak.png"
-blok = "blok.png"
 siat = 64 #siatka
 borx = 368 #ramka x (od lewej)
 bory = 32 #ramka y (od góry)
@@ -66,8 +66,8 @@ class Token(): # żetony
 
   def maluj(self):
     shft=10; bor = 32#20
-    if self.gracz==1: kolor=czerwony
-    elif self.gracz==2: kolor=złoty
+    if self.gracz==1: kolor=ishta
+    elif self.gracz==2: kolor=eresh
     #pygame.draw.rect(ekran,kolor,(self.x+bor,self.y,siat-bor,siat-bor))
     pygame.draw.circle(ekran, kolor, (self.x+bor+shft,self.y+bor), bor-shft)
 
@@ -96,22 +96,22 @@ class dice():
         x=centr+(delx+i%2*siat)*j; kolor=biały;
         pygame.draw.polygon(ekran,kolor,((x,y),(x-10,y+20),(x+10,y+20)))
         if(self.tetr[i] is True):
-          if(j>0): kolor=czarny#czerwony
-          else: kolor=czarny#złoty
+          if(j>0): kolor=czarny#ishta
+          else: kolor=czarny#eresh
           pygame.draw.polygon(ekran,kolor,((x,y),(x-3,y+20),(x+3,y+20)))
 
     y=bory+siat*5; gracz+=1; w=15 #player pointers
-    if(gracz==1): kolor=czerwony
-    else: kolor = złoty; w=-w;
+    if(gracz==1): kolor=ishta
+    else: kolor = eresh; w=-w;
     for i in range(-1,3,2):
       x=centr+siat*i
       pygame.draw.polygon(ekran,kolor,((x+w,y+20),(x-w,y+30),(x+w,y+40)))
 
     if(self.d<0):
       if(gracz==1):
-        label = myfont.render("Throw for Inanna", 5, czerwony); er=-10
+        label = myfont.render("Throw for Inanna", 5, ishta); er=-10
       else:
-        label = myfont.render("Throw for Ereshkigal", 5, złoty); er=7
+        label = myfont.render("Throw for Ereshkigal", 5, eresh); er=7
       #ekran.blit(label, (centr, bory+siat*8))
     else:
       label = myfont.render("Go for... "+str(int(self.d)), 5, biały); er=-24
@@ -213,7 +213,7 @@ class Gra():
     otok=[elem for i,elem in enumerate(self.tokeny) if elem.pos == pos]
     if len(otok) == 0:
       otok = None
-    elif otok[0].gracz==token.gracz:
+    elif otok[0].gracz==token.gracz or len(otok)>1:
       otok = -1
     elif pos!=7: otok=otok[0]
     else: otok=self.zwiad(token,d+1)
@@ -224,11 +224,18 @@ class Gra():
     print('widok',d,idt)
     pos = token.pos + d
     gen = ''
-    x,y=self.pos_pix(pos,token.gracz)
 
-    if(idt is None): gen='move'
-    elif(idt==-1): gen = 'stop'
+    if(pos==14): gen='win'
+    elif(idt is None or ((pos<4 or pos>11)and idt!=-1)):
+      if(pos==3 or pos==13): gen='extr'
+      elif(pos==7 and self.zwiad(token,d,'inner') is not True): gen='sankt'
+      else: gen='move'
+    elif(idt==-1):
+      gen = 'stop'
+      if(pos>14): pos=15
     else: gen='war'
+
+    x,y=self.pos_pix(pos,token.gracz)
     print(x,y,gen)
     e = Efekt(gen,x,y)
     self.efekty.append(e)
@@ -350,19 +357,32 @@ class Gra():
 class Efekt():
   def __init__(self,gen,x=ROZMIAR[0]//2,y=ROZMIAR[1]//2):
     self.id=id(self)
-    self.x = x
-    self.y = y
+    self.x = x+siat//2+siat//8
+    self.y = y+siat//2
     self.gen=gen
 
-    if(gen=='stop'): self.timer=300
-
-    else: self.timer=1
+    if(gen=='stop' or gen=='move'): self.timer=300
+    else: self.timer=300
 
   def maluj(self):
+    x=self.x; y=self.y
     self.timer-=1
     if(self.gen=='stop'):
-      pygame.draw.rect(ekran,niebieski,(self.x,self.y,20,20))
-      
+      x+=3; pygame.draw.circle(ekran,czerwony,(x,y),18)
+      pygame.draw.rect(ekran,biały,(x-14,y-5,28,10))
+    elif(self.gen=='move'):
+      pygame.draw.polygon(ekran,zielony,((x,y),(x+10,y-20),(x-10,y-20)))
+    elif(self.gen=='extr'):
+      pygame.draw.polygon(ekran,zielony,((x,y),(x+10,y-20),(x-10,y-20)))
+      pygame.draw.polygon(ekran,niebieski,((x,y-10),(x+10,y-30),(x-10,y-30)))
+    elif(self.gen=='war'):
+      pygame.draw.polygon(ekran,czerwony,((x,y),(x+10,y-20),(x-10,y-20)))
+      pygame.draw.polygon(ekran,czerwony,((x,y-10),(x+10,y-30),(x-10,y-30)))
+    elif(self.gen=='sankt'):
+      octogram(ekran,niebieski,x,y,10)
+      pygame.draw.polygon(ekran,zielony,((x,y),(x+10,y-20),(x-10,y-20)))
+      #pygame.draw.polygon(ekran,niebieski,((x,y-10),(x+10,y-30),(x-10,y-30)))
+    
     
 mbr=0
 d=-1
