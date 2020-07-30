@@ -225,6 +225,7 @@ class Gra():
     pos = token.pos + d
     gen = ''
 
+    if(pos==7 and self.zwiad(token,d,'inner') is True and idt!=-1): pos+=1;
     if(pos==14): gen='win'
     elif(idt is None or ((pos<4 or pos>11)and idt!=-1)):
       if(pos==3 or pos==13): gen='extr'
@@ -232,7 +233,7 @@ class Gra():
       else: gen='move'
     elif(idt==-1):
       gen = 'stop'
-      if(pos>14): pos=15
+      if(pos>14): pos=14
     else: gen='war'
 
     x,y=self.pos_pix(pos,token.gracz)
@@ -357,32 +358,41 @@ class Gra():
 class Efekt():
   def __init__(self,gen,x=ROZMIAR[0]//2,y=ROZMIAR[1]//2):
     self.id=id(self)
-    self.x = x+siat//2+siat//8
+    self.x = x+siat//2+siat//8+2
     self.y = y+siat//2
     self.gen=gen
+    self.up = 1
+    self.flash = 0
 
-    if(gen=='stop' or gen=='move'): self.timer=300
-    else: self.timer=300
+    if(gen=='stop' or gen=='move'):
+      self.timer=900; self.flash=200;
+    else: self.timer=900; self.flash=200;
 
   def maluj(self):
     x=self.x; y=self.y
     self.timer-=1
-    if(self.gen=='stop'):
-      x+=3; pygame.draw.circle(ekran,czerwony,(x,y),18)
-      pygame.draw.rect(ekran,biały,(x-14,y-5,28,10))
-    elif(self.gen=='move'):
-      pygame.draw.polygon(ekran,zielony,((x,y),(x+10,y-20),(x-10,y-20)))
-    elif(self.gen=='extr'):
-      pygame.draw.polygon(ekran,zielony,((x,y),(x+10,y-20),(x-10,y-20)))
-      pygame.draw.polygon(ekran,niebieski,((x,y-10),(x+10,y-30),(x-10,y-30)))
-    elif(self.gen=='war'):
-      pygame.draw.polygon(ekran,czerwony,((x,y),(x+10,y-20),(x-10,y-20)))
-      pygame.draw.polygon(ekran,czerwony,((x,y-10),(x+10,y-30),(x-10,y-30)))
-    elif(self.gen=='sankt'):
-      octogram(ekran,niebieski,x,y,10)
-      pygame.draw.polygon(ekran,zielony,((x,y),(x+10,y-20),(x-10,y-20)))
-      #pygame.draw.polygon(ekran,niebieski,((x,y-10),(x+10,y-30),(x-10,y-30)))
-    
+    if(self.flash>0):
+      if(self.timer%self.flash==0): self.up+=1; self.up=self.up%2
+    if(self.up):
+      if(self.gen=='stop'):
+        x+=3; pygame.draw.circle(ekran,czerwony,(x,y),13)
+        pygame.draw.rect(ekran,biały,(x-10,y-4,19,7))
+      elif(self.gen=='move'):
+        pygame.draw.polygon(ekran,zielony,((x,y+3),(x+7,y-20),(x-7,y-20)))
+      elif(self.gen=='extr'):
+        octogram(ekran,niebieski,x,y,10)
+        pygame.draw.polygon(ekran,zielony,((x,y),(x+7,y-20),(x-7,y-20)))
+        #pygame.draw.polygon(ekran,zielony,((x,y),(x+10,y-20),(x-10,y-20)))
+        #pygame.draw.polygon(ekran,niebieski,((x,y-10),(x+10,y-30),(x-10,y-30)))
+      elif(self.gen=='war'):
+        pygame.draw.polygon(ekran,czerwony,((x,y),(x+7,y-20),(x-7,y-20)))
+        pygame.draw.polygon(ekran,czerwony,((x,y-10),(x+7,y-30),(x-7,y-30)))
+      elif(self.gen=='sankt'):
+        octogram(ekran,czerwony,x,y,13)
+        pygame.draw.polygon(ekran,zielony,((x,y),(x+7,y-20),(x-7,y-20)))
+        #pygame.draw.polygon(ekran,niebieski,((x,y-10),(x+10,y-30),(x-10,y-30)))
+      elif(self.gen=='win'):
+        octogram(ekran,czerwony,x,y,13)
     
 mbr=0
 d=-1
