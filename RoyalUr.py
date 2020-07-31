@@ -1,8 +1,7 @@
-# FDC # Royal Game of Ur # 0.1.0
+# FDC # Royal Game of Ur # 0.2.0
 
 import random, time, math, os, sys, pygame
-RX = 3
-RY = 8
+RX = 3; RY = 8
 
 pygame.init()
 ROZMIAR = 800,600
@@ -19,17 +18,17 @@ złoty = pygame.color.THECOLORS['gold']
 
 eresh = pygame.color.Color(0xd9,0xc2,0x52)
 ishta = pygame.color.Color(0xad,0x15,0x2e)
-ivory = pygame.color.Color(0xf0,0xf0,0xed)
+ivory = pygame.color.Color(0xf0,0xf0,0xef)
 myfont = pygame.font.SysFont("monospace", 16)
+mxfont = pygame.font.SysFont("monospace", 32)
 
-tło = "tlo.jpg"
-brak = "brak.png"
+tło = "tlo.jpg"; brak = "brak.png"
 siat = 64 #siatka
 borx = 368 #ramka x (od lewej)
 bory = 32 #ramka y (od góry)
-vol = 0.8
+vol = 0.8; n=7
 
-n=7
+##############################################################DEF&CLASS####
 
 def octogram(screen,color,x,y,a):
   pygame.draw.polygon(screen,color,((x-a,y-a),(x+a,y-a),(x+a,y+a),(x-a,y+a)))
@@ -46,6 +45,34 @@ def impc(i,cxy,rad,v,t,rev=False): #i-number moving points on a circle!
     t=t+full//i; t=t%full
     points.append((x,y))
   return points
+
+def board():
+  ekran.fill(czarny)
+  for i in range(8): #gameboard
+    if(3<i<6): k=0;l=1;
+    else: k=-1;l=2;
+    for j in range(k,l):
+      pygame.draw.rect(ekran,ivory,(borx+j*siat,bory+i*siat,siat-1,siat-1))
+  for i in range(0,7,3):
+    if(i==3): k=0;l=2;
+    else: k=-1;l=2;
+    for j in range(k,l,2):
+      octogram(ekran,czarny,borx+j*siat+32,bory+i*siat+32,siat//4)
+
+class Main():
+  def __init__(self):
+    self.run = 1
+    self.mod = 'menu'
+
+  def mcheck(self,x,y):
+    self.mod = 'game_init'
+
+  def maluj(self):
+    board()
+
+    label = myfont.render("Click anywhere to start", 7, biały)
+    ekran.blit(label, (borx-siat-14, bory+siat*8+10))
+    pygame.display.flip()
 
 class Token(): # żetony
   def __init__(self,gracz):
@@ -338,6 +365,14 @@ class Gra():
     d=self.d.losuj()
     return d
 
+  def sign(self,case):
+    if   case==0: pass #zero throw
+    elif case==1: pass #no moves
+    elif case==2: pass #extra turn
+    elif case==3: pass #sanctuary
+    elif case==4: pass #finish
+    elif case==5: pass #fight
+
   def win(self,delta):
     if delta == 0:
       for i in range(len(self.tokeny)-1,-1,-1):
@@ -346,9 +381,19 @@ class Gra():
           else: self.win2=self.win2+1
           del(self.tokeny[i])
 
-    if(self.win2==n): print("Ereshkigal"); return 1;
-    elif(self.win1==n): print("Inanna"); return 1;
+    if(self.win2==n):
+      b="Ereshkigal"; kolor=eresh; er=240; print(b)
+    elif(self.win1==n):
+      b="Inanna"; kolor=innan; er=240; print(b)
     else: return 0;
+
+    (x,y)=ROZMIAR
+    ekran.fill(kolor)
+    octogram(ekran,czarny,x//2,y//2,256)
+    label = mxfont.render("Glory to "+b+"!!", 32, kolor)
+    ekran.blit(label, (x//2-er,y//2))
+    pygame.display.flip()
+    time.sleep(3); return 1;
 
   def maluj(self): #graphics
     ekran.fill(czarny)
@@ -419,89 +464,101 @@ class Efekt():
           pygame.draw.polygon(ekran,czarny,xys)
           xys= impc(3,p0[i],12,0.02,self.timer)
           pygame.draw.polygon(ekran,biały,xys)
-      
-mbr=0
-d=-1
-g=Gra()
-while True:
+
+###################################################################MAIN#######
+
+main = Main(); mbr=0;
+while main.run:
   for zdarzenie in pygame.event.get():
       if zdarzenie.type == pygame.QUIT:
         pygame.display.quit()
         pygame.quit()
         sys.exit()
-  
-  g.maluj()
-  a=g.koryguj()
-  if(g.win(a)): break;
-
+        
   (x,y)=pygame.mouse.get_pos()
-  g.dice.x,g.dice.y=(x,y)
   m=pygame.mouse.get_pressed()
-  if(m==(0,0,0)): mbr=0;  
-  if(mbr==0):
-      if(m[0]==True or m[2]==True):
-        #print(x,y)
-        if(d<0): #time to throw a dice!
-          g.dice.up=(g.dice.up+1)%2
-          d=g.losuj()
-          print(d)
-          if(d==0): d=-1; g.end() #if 0 is roll
-          else: #if there's no move to perform
-            b=d; d=-1;
-            for i in range(len(g.tokeny)):
-              if(g.tokeny[i].gracz==g.tura+1):
-                a=g.zwiad(g.tokeny[i],b)
-                if(a!=-1): d=b; break;
-            if(d<0): g.end()
-            
-        else: #time to select a champion!
-          if(g.col(x)==1 and g.tura==0): #from column 1
-            tok=g.row(y)
-            if(tok<len(g.row1)):
-              print(tok," 1")
-              tok=g.row1[tok]
-              target=g.zwiad(tok,d)
-              if(m[2]):
-                  g.widok(tok,d,target)
-              elif(target is not -1):
-                g.remove(tok)
-                g.init_ruch(tok,d)
-                d=-1
-                g.end(tok)
 
-          elif(g.col(x)==2 and g.tura==1): #from column 2
-            tok=g.row(y)
-            if(tok<len(g.row2)):
-              print(tok,"2")
-              tok=g.row2[tok]
-              target=g.zwiad(tok,d)
-              if(m[2]):
-                  g.widok(tok,d,target)
-              elif(target is not -1):
-                g.remove(tok)
-                g.init_ruch(tok,d)
-                d=-1
-                g.end(tok)
+  if main.mod=='menu':
+    main.maluj()
 
-          else:                           #from the board
-            tok=g.field(x,y)
-            if tok is not None:
-              if(tok.gracz==g.tura+1):
+    if(m==(0,0,0)): mbr=0;  
+    if(mbr==0):
+      if(m[0]==True):
+        main.mcheck(x,y)
+        mbr=1
+
+  if main.mod=='game_init':      
+    g=Gra(); d=-1
+    main.mod='game'
+  if main.mod=='game':
+    
+    g.maluj()
+    a=g.koryguj()
+
+    g.dice.x,g.dice.y=(x,y)
+    if(m==(0,0,0)): mbr=0;  
+    if(mbr==0):
+        if(m[0]==True or m[2]==True):
+          #print(x,y)
+          if(d<0): #time to throw a dice!
+            g.dice.up=(g.dice.up+1)%2
+            d=g.losuj()
+            print(d)
+            if(d==0): d=-1; g.sign(0); g.end() #if 0 is rolled
+            else:               #if there's no move to perform
+              b=d; d=-1;
+              for i in range(len(g.tokeny)):
+                if(g.tokeny[i].gracz==g.tura+1):
+                  a=g.zwiad(g.tokeny[i],b)
+                  if(a!=-1): d=b; break;
+              if(d<0): g.sign(1); g.end()
+              
+          else: #time to select a champion!
+            if(g.col(x)==1 and g.tura==0): #from column 1
+              tok=g.row(y)
+              if(tok<len(g.row1)):
+                print(tok," 1")
+                tok=g.row1[tok]
                 target=g.zwiad(tok,d)
                 if(m[2]):
-                  g.widok(tok,d,target)
+                    g.widok(tok,d,target)
                 elif(target is not -1):
-                  g.init_ruch(tok,d,target)
+                  g.remove(tok)
+                  g.init_ruch(tok,d)
                   d=-1
                   g.end(tok)
-        
-        mbr=1
+
+            elif(g.col(x)==2 and g.tura==1): #from column 2
+              tok=g.row(y)
+              if(tok<len(g.row2)):
+                print(tok,"2")
+                tok=g.row2[tok]
+                target=g.zwiad(tok,d)
+                if(m[2]):
+                    g.widok(tok,d,target)
+                elif(target is not -1):
+                  g.remove(tok)
+                  g.init_ruch(tok,d)
+                  d=-1
+                  g.end(tok)
+
+            else:                           #from the board
+              tok=g.field(x,y)
+              if tok is not None:
+                if(tok.gracz==g.tura+1):
+                  target=g.zwiad(tok,d)
+                  if(m[2]):
+                    g.widok(tok,d,target)
+                  elif(target is not -1):
+                    g.init_ruch(tok,d,target)
+                    d=-1
+                    g.end(tok)
+                    
+          mbr=1
+    if(g.win(a)): main.mod='menu';
         
 
 #todo
-#MENU
-
-#DUEL
-#AI
-#OPT
-#EXT
+#SOUND
+#MESSAGES
+#AI #OPT #EXT
