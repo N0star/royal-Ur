@@ -1,6 +1,6 @@
 # FDC # Royal Game of Ur # 0.1.0
 
-import random, time, os, sys, pygame
+import random, time, math, os, sys, pygame
 RX = 3
 RY = 8
 
@@ -19,6 +19,7 @@ złoty = pygame.color.THECOLORS['gold']
 
 eresh = pygame.color.Color(0xd9,0xc2,0x52)
 ishta = pygame.color.Color(0xad,0x15,0x2e)
+ivory = pygame.color.Color(0xf0,0xf0,0xed)
 myfont = pygame.font.SysFont("monospace", 16)
 
 tło = "tlo.jpg"
@@ -34,6 +35,17 @@ def octogram(screen,color,x,y,a):
   pygame.draw.polygon(screen,color,((x-a,y-a),(x+a,y-a),(x+a,y+a),(x-a,y+a)))
   a=a*1.4142
   pygame.draw.polygon(screen,color,((x,y-a),(x-a,y),(x,y+a),(x+a,y)))
+
+def impc(i,cxy,rad,v,t,rev=False): #i-number moving points on a circle!
+  full=5000; t=int(v*t); t=t%full
+  points = []
+  cx=cxy[0]; cy=cxy[1];
+  for _ in range(i):
+    x = rad*math.cos(t) + cx;
+    y = rad*math.sin(t) + cy;
+    t=t+full//i; t=t%full
+    points.append((x,y))
+  return points
 
 class Token(): # żetony
   def __init__(self,gracz):
@@ -137,6 +149,9 @@ class Gra():
     self.win1=0
     self.win2=0
     self.efekty = []
+    
+    self.dice = Efekt('dice',0,0)
+    self.efekty.append(self.dice)
 
   def pos(self):
     x=64*3; y=bory+64; centr=borx-siat//6
@@ -195,7 +210,8 @@ class Gra():
     for i in range(len(self.tokeny)):
       a+=self.tokeny[i].correct(v)
     for i in range(len(self.efekty)-1,-1,-1):
-      if(self.efekty[i].timer<=0): del(self.efekty[i])
+      if(self.efekty[i].timer<=0):
+        if(self.efekty[i].gen!='dice'): del(self.efekty[i])
     return a
 
   def zwiad(self,token,d,inner=None):
@@ -316,6 +332,7 @@ class Gra():
       elif(token==7):
         pass
     else: self.tura=(self.tura+1)%2
+    self.dice.up=(self.dice.up+1)%2
 
   def losuj(self):
     d=self.d.losuj()
@@ -339,7 +356,7 @@ class Gra():
       if(3<i<6): k=0;l=1;
       else: k=-1;l=2;
       for j in range(k,l):
-        pygame.draw.rect(ekran,biały,(borx+j*siat,bory+i*siat,siat-1,siat-1))
+        pygame.draw.rect(ekran,ivory,(borx+j*siat,bory+i*siat,siat-1,siat-1))
 
     for i in range(0,7,3):
       if(i==3): k=0;l=2;
@@ -366,6 +383,7 @@ class Efekt():
 
     if(gen=='stop' or gen=='move'):
       self.timer=900; self.flash=200;
+    elif(gen=='dice'): self.timer=3
     else: self.timer=900; self.flash=200;
 
   def maluj(self):
@@ -393,7 +411,15 @@ class Efekt():
         #pygame.draw.polygon(ekran,niebieski,((x,y-10),(x+10,y-30),(x-10,y-30)))
       elif(self.gen=='win'):
         octogram(ekran,czerwony,x,y,13)
-    
+      elif(self.gen=='dice'):
+        self.timer+=2
+        p0 = impc(4,(x,y),32,0.013,self.timer)
+        for i in range(len(p0)):
+          xys= impc(3,p0[i],14,0.02,self.timer)
+          pygame.draw.polygon(ekran,czarny,xys)
+          xys= impc(3,p0[i],12,0.02,self.timer)
+          pygame.draw.polygon(ekran,biały,xys)
+      
 mbr=0
 d=-1
 g=Gra()
@@ -407,14 +433,16 @@ while True:
   g.maluj()
   a=g.koryguj()
   if(g.win(a)): break;
-  
+
+  (x,y)=pygame.mouse.get_pos()
+  g.dice.x,g.dice.y=(x,y)
   m=pygame.mouse.get_pressed()
   if(m==(0,0,0)): mbr=0;  
   if(mbr==0):
-      (x,y)=pygame.mouse.get_pos()
       if(m[0]==True or m[2]==True):
         #print(x,y)
         if(d<0): #time to throw a dice!
+          g.dice.up=(g.dice.up+1)%2
           d=g.losuj()
           print(d)
           if(d==0): d=-1; g.end() #if 0 is roll
