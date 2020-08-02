@@ -382,9 +382,9 @@ class Gra():
           del(self.tokeny[i])
 
     if(self.win2==n):
-      b="Ereshkigal"; kolor=eresh; er=240; print(b)
+      b="Ereshkigal"; kolor=eresh; er=200; print(b)
     elif(self.win1==n):
-      b="Inanna"; kolor=innan; er=240; print(b)
+      b="Inanna"; kolor=ishta; er=169; print(b)
     else: return 0;
 
     (x,y)=ROZMIAR
